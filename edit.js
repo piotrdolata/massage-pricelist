@@ -45,39 +45,48 @@
 	};
 
 	blocks.registerBlockType("studio/massage-pricelist", {
-			edit: function (props) {
-				const { attributes, setAttributes } = props;
-				const items = attributes.items || [];
-				const [activeIndex, setActiveIndex] = useState(0);
-				const blockProps = useBlockProps({ className: "mp-grid mp-editor-grid" });
+		edit: function (props) {
+			const { attributes, setAttributes } = props;
+			const items = attributes.items || [];
+			const [activeIndex, setActiveIndex] = useState(0);
+			const blockProps = useBlockProps({ className: "mp-grid mp-editor-grid" });
 
-				const updateItem = (index, field, value) => {
-					const next = items.map((item, idx) =>
-						idx === index ? Object.assign({}, item, { [field]: value }) : item,
-					);
-					setAttributes({ items: next });
-				};
+			const updateItem = (index, field, value) => {
+				const next = items.map((item, idx) =>
+					idx === index ? Object.assign({}, item, { [field]: value }) : item,
+				);
+				setAttributes({ items: next });
+			};
 
-				const addItem = () => {
-					const newItem = {
-						title: "Nowy masaż",
-						description: "",
-						variants: [{ duration: "60 min", price: "180 zł" }],
-						strength: "relaksacyjny",
-						oils: "tak",
-						clothing: "w bieliźnie",
-						pace: "umiarkowane",
-						scope: ["plecy", "kark", "ramiona"],
-					};
-					setAttributes({ items: [...items, newItem] });
-					setActiveIndex(items.length);
+			const addItem = () => {
+				const newItem = {
+					title: "Nowy masaż",
+					description: "",
+					category: "masaze",
+					variants: [{ duration: "60 min", price: "180 zł" }],
+					strength: "relaksacyjny",
+					oils: "tak",
+					clothing: "w bieliźnie",
+					pace: "umiarkowane",
+					scope: ["plecy", "kark", "ramiona"],
 				};
+				setAttributes({ items: [...items, newItem] });
+				setActiveIndex(items.length);
+			};
+
 			const removeItem = (index) => {
 				const next = items.filter((_, idx) => idx !== index);
 				setAttributes({ items: next });
 				if (activeIndex >= next.length) {
 					setActiveIndex(Math.max(0, next.length - 1));
 				}
+			};
+
+			const updateVariant = (itemIdx, varIdx, key, val) => {
+				const variants = (items[itemIdx].variants || []).map((v, i) =>
+					i === varIdx ? Object.assign({}, v, { [key]: val }) : v,
+				);
+				updateItem(itemIdx, "variants", variants);
 			};
 
 			const moveItem = (index, direction) => {
@@ -89,13 +98,6 @@
 				next[targetIndex] = temp;
 				setAttributes({ items: next });
 				setActiveIndex(targetIndex);
-			};
-
-			const updateVariant = (itemIdx, varIdx, key, val) => {
-				const variants = (items[itemIdx].variants || []).map((v, i) =>
-					i === varIdx ? Object.assign({}, v, { [key]: val }) : v,
-				);
-				updateItem(itemIdx, "variants", variants);
 			};
 
 			const addVariant = (itemIdx) => {
@@ -120,90 +122,101 @@
 					: current.filter((k) => k !== partKey);
 				updateItem(itemIdx, "scope", next);
 			};
-				const renderTag = (key) => {
-					if (!LABELS[key]) return null;
-					return el("span", { key: key, className: "mp-feature-pill" }, LABELS[key]);
-				};
 
-				const renderScopeTag = (scopeArray) => {
-					if (!scopeArray || !scopeArray.length) return null;
-					const labels = scopeArray.map(k => LABELS[k]).filter(Boolean).join(', ');
-					if (!labels) return null;
-					return el("span", { className: "mp-feature-pill" }, "zakres: " + labels);
-				};
+			const renderTag = (key) => {
+				if (!LABELS[key]) return null;
+				return el("span", { key: key, className: "mp-feature-pill" }, LABELS[key]);
+			};
 
-				const activeItem = items[activeIndex] || null;
+			const renderScopeTag = (scopeArray) => {
+				if (!scopeArray || !scopeArray.length) return null;
+				const labels = scopeArray.map(k => LABELS[k]).filter(Boolean).join(', ');
+				if (!labels) return null;
+				return el("span", { className: "mp-feature-pill" }, "zakres: " + labels);
+			};
 
-				return el(
-					Fragment,
+			const activeItem = items[activeIndex] || null;
+
+			return el(
+				Fragment,
+				null,
+				el(
+					InspectorControls,
 					null,
-					el(
-						InspectorControls,
-						null,
-						activeItem &&
+					activeItem &&
+						el(
+							PanelBody,
+							{
+								title:
+									"Właściwości: " +
+									(activeItem.title || "Masaż #" + (activeIndex + 1)),
+								initialOpen: true,
+							},
+							el(SelectControl, {
+								label: "Kategoria",
+								value: activeItem.category,
+								options: [
+									{ label: "Masaże", value: "masaze" },
+									{ label: "Zabiegi i rytuały", value: "zabiegi" },
+									{ label: "Pakiety", value: "pakiety" },
+								],
+								onChange: (val) => updateItem(activeIndex, "category", val),
+							}),
+							el(SelectControl, {
+								label: "Siła masażu",
+								value: activeItem.strength,
+								options: [
+									{ label: "intensywny", value: "intensywny" },
+									{ label: "relaksacyjny", value: "relaksacyjny" },
+								],
+								onChange: (val) => updateItem(activeIndex, "strength", val),
+							}),
+							el(SelectControl, {
+								label: "Olejki",
+								value: activeItem.oils,
+								options: [
+									{ label: "z olejkami", value: "tak" },
+									{ label: "bez olejków", value: "nie" },
+								],
+								onChange: (val) => updateItem(activeIndex, "oils", val),
+							}),
+							el(SelectControl, {
+								label: "Ubranie",
+								value: activeItem.clothing,
+								options: [
+									{ label: "w bieliźnie", value: "w bieliźnie" },
+									{ label: "bez ubrania", value: "bez ubrania" },
+								],
+								onChange: (val) => updateItem(activeIndex, "clothing", val),
+							}),
+							el(SelectControl, {
+								label: "Tempo",
+								value: activeItem.pace,
+								options: [
+									{ label: "wolne tempo", value: "wolne" },
+									{ label: "tempo umiarkowane", value: "umiarkowane" },
+									{ label: "szybkie tempo", value: "szybkie" },
+								],
+								onChange: (val) => updateItem(activeIndex, "pace", val),
+							}),
 							el(
-								PanelBody,
-								{
-									title:
-										"Właściwości: " +
-										(activeItem.title || "Masaż #" + (activeIndex + 1)),
-									initialOpen: true,
-								},
-								el(SelectControl, {
-									label: "Siła masażu",
-									value: activeItem.strength,
-									options: [
-										{ label: "intensywny", value: "intensywny" },
-										{ label: "relaksacyjny", value: "relaksacyjny" },
-									],
-									onChange: (val) => updateItem(activeIndex, "strength", val),
-								}),
-								el(SelectControl, {
-									label: "Olejki",
-									value: activeItem.oils,
-									options: [
-										{ label: "z olejkami", value: "tak" },
-										{ label: "bez olejków", value: "nie" },
-									],
-									onChange: (val) => updateItem(activeIndex, "oils", val),
-								}),
-								el(SelectControl, {
-									label: "Ubranie",
-									value: activeItem.clothing,
-									options: [
-										{ label: "w bieliźnie", value: "w bieliźnie" },
-										{ label: "bez ubrania", value: "bez ubrania" },
-									],
-									onChange: (val) => updateItem(activeIndex, "clothing", val),
-								}),
-								el(SelectControl, {
-									label: "Tempo",
-									value: activeItem.pace,
-									options: [
-										{ label: "wolne tempo", value: "wolne" },
-										{ label: "tempo umiarkowane", value: "umiarkowane" },
-										{ label: "szybkie tempo", value: "szybkie" },
-									],
-									onChange: (val) => updateItem(activeIndex, "pace", val),
-								}),
-								el(
-									"p",
-									{ style: { fontWeight: 600, marginBottom: "8px" } },
-									"Zakres masażu:",
-								),
-								SCOPE_OPTIONS.map((opt) =>
-									el(CheckboxControl, {
-										key: opt.key,
-										label: opt.label,
-										checked: (activeItem.scope || []).includes(opt.key),
-										onChange: (checked) =>
-											toggleScope(activeIndex, opt.key, checked),
-									}),
-								),
+								"p",
+								{ style: { fontWeight: 600, marginBottom: "8px" } },
+								"Zakres masażu:",
 							),
-					),
-					el(
-						"div",
+							SCOPE_OPTIONS.map((opt) =>
+								el(CheckboxControl, {
+									key: opt.key,
+									label: opt.label,
+									checked: (activeItem.scope || []).includes(opt.key),
+									onChange: (checked) =>
+										toggleScope(activeIndex, opt.key, checked),
+								}),
+							),
+						),
+				),
+				el(
+					"div",
 					blockProps,
 					items.map((item, index) => {
 						const isSelected = index === activeIndex;
@@ -319,7 +332,7 @@
 								renderTag(item.oils),
 								renderTag(item.clothing),
 								renderTag(item.pace),
-									renderScopeTag(item.scope),
+								renderScopeTag(item.scope),
 							),
 						);
 					}),
