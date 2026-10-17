@@ -1,8 +1,7 @@
 (function (blocks, element, blockEditor, components) {
 	const el = element.createElement;
 	const { useState, Fragment } = element;
-	const { useBlockProps, InspectorControls, MediaUpload, MediaUploadCheck } =
-		blockEditor;
+	const { useBlockProps, InspectorControls } = blockEditor;
 	const {
 		PanelBody,
 		SelectControl,
@@ -13,73 +12,62 @@
 	} = components;
 
 	const SCOPE_OPTIONS = [
-		{ key: "kark", label: "Kark" },
-		{ key: "barki", label: "Barki" },
-		{ key: "plecy", label: "Plecy" },
-		{ key: "nogi", label: "Nogi" },
+		{ key: "głowa", label: "głowa" },
+		{ key: "kark", label: "kark" },
+		{ key: "plecy", label: "plecy" },
+		{ key: "nogi", label: "nogi" },
+		{ key: "ramiona", label: "ramiona" },
+		{ key: "stopy", label: "stopy" },
+		{ key: "dłonie", label: "dłonie" },
 	];
 
-	const ICON_KEYS = [
-		{ key: "silny", label: "Siła: Silny" },
-		{ key: "umiarkowany", label: "Siła: Umiarkowany" },
-		{ key: "tak", label: "Olejki: Tak" },
-		{ key: "nie", label: "Olejki: Nie" },
-		{ key: "bielizna", label: "Ubranie: Bielizna" },
-		{ key: "nago", label: "Ubranie: Nago" },
-		{ key: "szybkie", label: "Tempo: Szybkie" },
-		{ key: "umiarkowane", label: "Tempo: Umiarkowane" },
-		{ key: "wolne", label: "Tempo: Wolne" },
-		{ key: "kark", label: "Zakres: Kark" },
-		{ key: "barki", label: "Zakres: Barki" },
-		{ key: "plecy", label: "Zakres: Plecy" },
-		{ key: "nogi", label: "Zakres: Nogi" },
-	];
-
-	const LABELS = ICON_KEYS.reduce((acc, item) => {
-		acc[item.key] = item.label;
-		return acc;
-	}, {});
+	const LABELS = {
+		"intensywny": "intensywny",
+		"relaksacyjny": "relaksacyjny",
+		"tak": "z olejkami",
+		"nie": "bez olejków",
+		"w bieliźnie": "w bieliźnie",
+		"bez ubrania": "bez ubrania",
+		"wolne": "wolne tempo",
+		"umiarkowane": "tempo umiarkowane",
+		"szybkie": "szybkie tempo",
+		"głowa": "głowa",
+		"kark": "kark",
+		"plecy": "plecy",
+		"nogi": "nogi",
+		"ramiona": "ramiona",
+		"stopy": "stopy",
+		"dłonie": "dłonie",
+	};
 
 	blocks.registerBlockType("studio/massage-pricelist", {
-		edit: function (props) {
-			const { attributes, setAttributes } = props;
-			const items = attributes.items || [];
-			const customIcons = attributes.customIcons || {};
-			const [activeIndex, setActiveIndex] = useState(0);
-			const blockProps = useBlockProps({ className: "mp-grid mp-editor-grid" });
+			edit: function (props) {
+				const { attributes, setAttributes } = props;
+				const items = attributes.items || [];
+				const [activeIndex, setActiveIndex] = useState(0);
+				const blockProps = useBlockProps({ className: "mp-grid mp-editor-grid" });
 
-			const setCustomIcon = (featureKey, media) => {
-				const nextIcons = Object.assign({}, customIcons);
-				if (media && media.url) {
-					nextIcons[featureKey] = { id: media.id, url: media.url };
-				} else {
-					delete nextIcons[featureKey];
-				}
-				setAttributes({ customIcons: nextIcons });
-			};
-
-			const updateItem = (index, field, value) => {
-				const next = items.map((item, idx) =>
-					idx === index ? Object.assign({}, item, { [field]: value }) : item,
-				);
-				setAttributes({ items: next });
-			};
-
-			const addItem = () => {
-				const newItem = {
-					title: "Nowy masaż",
-					description: "",
-					variants: [{ duration: "60 min", price: "180 zł" }],
-					strength: "umiarkowany",
-					oils: "tak",
-					clothing: "bielizna",
-					pace: "umiarkowane",
-					scope: ["plecy"],
+				const updateItem = (index, field, value) => {
+					const next = items.map((item, idx) =>
+						idx === index ? Object.assign({}, item, { [field]: value }) : item,
+					);
+					setAttributes({ items: next });
 				};
-				setAttributes({ items: [...items, newItem] });
-				setActiveIndex(items.length);
-			};
 
+				const addItem = () => {
+					const newItem = {
+						title: "Nowy masaż",
+						description: "",
+						variants: [{ duration: "60 min", price: "180 zł" }],
+						strength: "relaksacyjny",
+						oils: "tak",
+						clothing: "w bieliźnie",
+						pace: "umiarkowane",
+						scope: ["plecy", "kark", "ramiona"],
+					};
+					setAttributes({ items: [...items, newItem] });
+					setActiveIndex(items.length);
+				};
 			const removeItem = (index) => {
 				const next = items.filter((_, idx) => idx !== index);
 				setAttributes({ items: next });
@@ -121,7 +109,6 @@
 				updateItem(itemIdx, "variants", variants);
 			};
 
-
 			const toggleScope = (itemIdx, partKey, checked) => {
 				const current = items[itemIdx].scope || [];
 				const next = checked
@@ -129,155 +116,90 @@
 					: current.filter((k) => k !== partKey);
 				updateItem(itemIdx, "scope", next);
 			};
+				const renderTag = (key) => {
+					if (!LABELS[key]) return null;
+					return el("span", { key: key, className: "mp-feature-pill" }, LABELS[key]);
+				};
 
-			const renderTagWithIcon = (key) => {
-				const iconUrl = customIcons[key] && customIcons[key].url;
+				const renderScopeTag = (scopeArray) => {
+					if (!scopeArray || !scopeArray.length) return null;
+					const labels = scopeArray.map(k => LABELS[k]).filter(Boolean).join(', ');
+					if (!labels) return null;
+					return el("span", { className: "mp-feature-pill" }, "zakres: " + labels);
+				};
+
+				const activeItem = items[activeIndex] || null;
+
 				return el(
-					"span",
-					{ key: key, className: "mp-tag" },
-					iconUrl &&
-						el("img", { src: iconUrl, className: "mp-tag__icon", alt: "" }),
-					LABELS[key],
-				);
-			};
-
-			const activeItem = items[activeIndex] || null;
-
-			return el(
-				Fragment,
-				null,
-				el(
-					InspectorControls,
+					Fragment,
 					null,
-					activeItem &&
-						el(
-							PanelBody,
-							{
-								title:
-									"Właściwości: " +
-									(activeItem.title || "Masaż #" + (activeIndex + 1)),
-								initialOpen: true,
-							},
-							el(SelectControl, {
-								label: "Siła masażu",
-								value: activeItem.strength,
-								options: [
-									{ label: "Umiarkowany", value: "umiarkowany" },
-									{ label: "Silny", value: "silny" },
-								],
-								onChange: (val) => updateItem(activeIndex, "strength", val),
-							}),
-							el(SelectControl, {
-								label: "Olejki",
-								value: activeItem.oils,
-								options: [
-									{ label: "Tak (z olejkami)", value: "tak" },
-									{ label: "Nie (bez olejków)", value: "nie" },
-								],
-								onChange: (val) => updateItem(activeIndex, "oils", val),
-							}),
-							el(SelectControl, {
-								label: "Ubranie",
-								value: activeItem.clothing,
-								options: [
-									{ label: "Bielizna", value: "bielizna" },
-									{ label: "Nago", value: "nago" },
-								],
-								onChange: (val) => updateItem(activeIndex, "clothing", val),
-							}),
-							el(SelectControl, {
-								label: "Tempo",
-								value: activeItem.pace,
-								options: [
-									{ label: "Wolne", value: "wolne" },
-									{ label: "Umiarkowane", value: "umiarkowane" },
-									{ label: "Szybkie", value: "szybkie" },
-								],
-								onChange: (val) => updateItem(activeIndex, "pace", val),
-							}),
-							el(
-								"p",
-								{ style: { fontWeight: 600, marginBottom: "8px" } },
-								"Zakres masażu:",
-							),
-							SCOPE_OPTIONS.map((opt) =>
-								el(CheckboxControl, {
-									key: opt.key,
-									label: opt.label,
-									checked: (activeItem.scope || []).includes(opt.key),
-									onChange: (checked) =>
-										toggleScope(activeIndex, opt.key, checked),
-								}),
-							),
-						),
 					el(
-						PanelBody,
-						{ title: "Własne ikony (SVG / Media)", initialOpen: false },
-						ICON_KEYS.map((item) => {
-							const currentIcon = customIcons[item.key];
-							return el(
-								"div",
-								{ key: item.key, className: "mp-icon-picker-row" },
+						InspectorControls,
+						null,
+						activeItem &&
+							el(
+								PanelBody,
+								{
+									title:
+										"Właściwości: " +
+										(activeItem.title || "Masaż #" + (activeIndex + 1)),
+									initialOpen: true,
+								},
+								el(SelectControl, {
+									label: "Siła masażu",
+									value: activeItem.strength,
+									options: [
+										{ label: "intensywny", value: "intensywny" },
+										{ label: "relaksacyjny", value: "relaksacyjny" },
+									],
+									onChange: (val) => updateItem(activeIndex, "strength", val),
+								}),
+								el(SelectControl, {
+									label: "Olejki",
+									value: activeItem.oils,
+									options: [
+										{ label: "z olejkami", value: "tak" },
+										{ label: "bez olejków", value: "nie" },
+									],
+									onChange: (val) => updateItem(activeIndex, "oils", val),
+								}),
+								el(SelectControl, {
+									label: "Ubranie",
+									value: activeItem.clothing,
+									options: [
+										{ label: "w bieliźnie", value: "w bieliźnie" },
+										{ label: "bez ubrania", value: "bez ubrania" },
+									],
+									onChange: (val) => updateItem(activeIndex, "clothing", val),
+								}),
+								el(SelectControl, {
+									label: "Tempo",
+									value: activeItem.pace,
+									options: [
+										{ label: "wolne tempo", value: "wolne" },
+										{ label: "tempo umiarkowane", value: "umiarkowane" },
+										{ label: "szybkie tempo", value: "szybkie" },
+									],
+									onChange: (val) => updateItem(activeIndex, "pace", val),
+								}),
 								el(
-									"div",
-									{ className: "mp-icon-picker-row__info" },
-									currentIcon && currentIcon.url
-										? el("img", {
-												src: currentIcon.url,
-												className: "mp-icon-picker-row__preview",
-												alt: "",
-											})
-										: el(
-												"span",
-												{ className: "mp-icon-picker-row__placeholder" },
-												"SVG",
-											),
-									el(
-										"span",
-										{ className: "mp-icon-picker-row__label" },
-										item.label,
-									),
+									"p",
+									{ style: { fontWeight: 600, marginBottom: "8px" } },
+									"Zakres masażu:",
 								),
-								el(
-									"div",
-									{ className: "mp-icon-picker-row__actions" },
-									el(
-										MediaUploadCheck,
-										null,
-										el(MediaUpload, {
-											onSelect: (media) => setCustomIcon(item.key, media),
-											allowedTypes: ["image/svg+xml", "image"],
-											value: currentIcon ? currentIcon.id : "",
-											render: ({ open }) =>
-												el(
-													Button,
-													{
-														variant: "secondary",
-														isSmall: true,
-														onClick: open,
-													},
-													currentIcon ? "Zmień" : "Wybierz",
-												),
-										}),
-									),
-									currentIcon &&
-										el(
-											Button,
-											{
-												isDestructive: true,
-												isSmall: true,
-												variant: "link",
-												onClick: () => setCustomIcon(item.key, null),
-											},
-											"Reset",
-										),
+								SCOPE_OPTIONS.map((opt) =>
+									el(CheckboxControl, {
+										key: opt.key,
+										label: opt.label,
+										checked: (activeItem.scope || []).includes(opt.key),
+										onChange: (checked) =>
+											toggleScope(activeIndex, opt.key, checked),
+									}),
 								),
-							);
-						}),
+							),
 					),
-				),
-				el(
-					"div",
+					el(
+						"div",
 					blockProps,
 					items.map((item, index) => {
 						const isSelected = index === activeIndex;
@@ -367,20 +289,6 @@
 												updateVariant(index, vIdx, "price", val),
 										}),
 										el(Button, {
-											icon: "arrow-up-alt2",
-											label: "Wyżej",
-											isSmall: true,
-											disabled: vIdx === 0,
-											onClick: () => moveVariant(index, vIdx, -1),
-										}),
-										el(Button, {
-											icon: "arrow-down-alt2",
-											label: "Niżej",
-											isSmall: true,
-											disabled: vIdx === variants.length - 1,
-											onClick: () => moveVariant(index, vIdx, 1),
-										}),
-										el(Button, {
 											isDestructive: true,
 											icon: "no-alt",
 											isSmall: true,
@@ -403,11 +311,11 @@
 							el(
 								"div",
 								{ className: "mp-editor-tags" },
-								renderTagWithIcon(item.strength),
-								renderTagWithIcon(item.oils),
-								renderTagWithIcon(item.clothing),
-								renderTagWithIcon(item.pace),
-								(item.scope || []).map((s) => renderTagWithIcon(s)),
+								renderTag(item.strength),
+								renderTag(item.oils),
+								renderTag(item.clothing),
+								renderTag(item.pace),
+									renderScopeTag(item.scope),
 							),
 						);
 					}),

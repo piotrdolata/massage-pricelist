@@ -6,16 +6,12 @@
 	"title": "Cennik Masaży",
 	"category": "widgets",
 	"icon": "list-view",
-	"description": "Dwukolumnowy cennik usług masażu z filtrowaniem AJAX i własnymi ikonami SVG.",
+	"description": "Dwukolumnowy cennik usług masażu z filtrowaniem AJAX.",
 	"supports": {
 		"html": false,
 		"align": ["wide", "full"]
 	},
 	"attributes": {
-		"customIcons": {
-			"type": "object",
-			"default": {}
-		},
 		"items": {
 			"type": "array",
 			"default": [
@@ -27,11 +23,11 @@
 						{ "duration": "60 min", "price": "180 zł" },
 						{ "duration": "90 min", "price": "240 zł" }
 					],
-					"strength": "umiarkowany",
+					"strength": "relaksacyjny",
 					"oils": "tak",
-					"clothing": "bielizna",
+					"clothing": "w bieliźnie",
 					"pace": "umiarkowane",
-					"scope": ["plecy", "kark", "barki"]
+					"scope": ["plecy", "kark", "ramiona"]
 				}
 			]
 		}
