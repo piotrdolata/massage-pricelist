@@ -23,6 +23,10 @@
 
 	const LABELS = {
 		"intensywny": "intensywny",
+		"silny": "intensywny",
+		"umiarkowany": "relaksacyjny",
+		"bielizna": "w bieliźnie",
+		"nago": "bez ubrania",
 		"relaksacyjny": "relaksacyjny",
 		"tak": "z olejkami",
 		"nie": "bez olejków",

@@ -34,6 +34,10 @@ add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
 	function mp_render_cards_html( $items, $active_category = 'wszystkie' ) {
 		$labels = array(
 			'intensywny' => 'intensywny',
+			'silny' => 'intensywny',
+			'umiarkowany' => 'relaksacyjny',
+			'bielizna' => 'w bieliźnie',
+			'nago' => 'bez ubrania',
 			'relaksacyjny' => 'relaksacyjny',
 			'tak' => 'z olejkami',
 			'nie' => 'bez olejków',
