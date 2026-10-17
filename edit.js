@@ -367,6 +367,20 @@
 												updateVariant(index, vIdx, "price", val),
 										}),
 										el(Button, {
+											icon: "arrow-up-alt2",
+											label: "Wyżej",
+											isSmall: true,
+											disabled: vIdx === 0,
+											onClick: () => moveVariant(index, vIdx, -1),
+										}),
+										el(Button, {
+											icon: "arrow-down-alt2",
+											label: "Niżej",
+											isSmall: true,
+											disabled: vIdx === variants.length - 1,
+											onClick: () => moveVariant(index, vIdx, 1),
+										}),
+										el(Button, {
 											isDestructive: true,
 											icon: "no-alt",
 											isSmall: true,
