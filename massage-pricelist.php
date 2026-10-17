@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Cennik Masaży - Gutenberg Block
- * Description: Dwukolumnowy blok cennika masaży z wariantami oraz ikonami cech i tooltipami.
- * Version: 1.0.0
+ * Description: Dwukolumnowy blok cennika masaży z filtrowaniem AJAX i własnymi ikonami SVG.
+ * Version: 1.2.0
  * Author: WP Dev
  * Text Domain: massage-pricelist
  */
@@ -18,9 +18,39 @@ function mp_register_pricelist_block() {
 }
 add_action( 'init', 'mp_register_pricelist_block' );
 
-/**
- * Definicje cech, opisów do tooltipów oraz ikon SVG.
- */
+function mp_enqueue_google_fonts() {
+	wp_enqueue_style(
+		'mp-google-fonts',
+		'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Jost:ital,wght@0,100..900;1,100..900&display=swap',
+		array(),
+		null
+	);
+}
+add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
+
+function mp_allow_svg_uploads( $mimes ) {
+	if ( current_user_can( 'upload_files' ) ) {
+		$mimes['svg']  = 'image/svg+xml';
+		$mimes['svgz'] = 'image/svg+xml';
+	}
+	return $mimes;
+}
+add_filter( 'upload_mimes', 'mp_allow_svg_uploads' );
+
+function mp_fix_svg_mime_type( $data, $file, $filename, $mimes ) {
+	$ext = isset( $data['ext'] ) ? $data['ext'] : '';
+	if ( strlen( $ext ) < 1 ) {
+		$exploded = explode( '.', $filename );
+		$ext      = strtolower( end( $exploded ) );
+	}
+	if ( 'svg' === $ext ) {
+		$data['type'] = 'image/svg+xml';
+		$data['ext']  = 'svg';
+	}
+	return $data;
+}
+add_filter( 'wp_check_filetype_and_ext', 'mp_fix_svg_mime_type', 10, 4 );
+
 function mp_get_features_map() {
 	return array(
 		'strength' => array(
@@ -88,79 +118,181 @@ function mp_get_features_map() {
 	);
 }
 
+function mp_get_icon_markup( $feature_key, $default_svg, $custom_icons ) {
+	if ( empty( $custom_icons[ $feature_key ] ) || ! is_array( $custom_icons[ $feature_key ] ) ) {
+		return $default_svg;
+	}
+
+	$icon_data = $custom_icons[ $feature_key ];
+	$att_id    = isset( $icon_data['id'] ) ? absint( $icon_data['id'] ) : 0;
+	$url       = isset( $icon_data['url'] ) ? esc_url( $icon_data['url'] ) : '';
+
+	if ( $att_id && 'image/svg+xml' === get_post_mime_type( $att_id ) ) {
+		$file_path = get_attached_file( $att_id );
+		if ( $file_path && file_exists( $file_path ) ) {
+			$svg_content = file_get_contents( $file_path );
+			if ( false !== strpos( $svg_content, '<svg' ) ) {
+				return $svg_content;
+			}
+		}
+	}
+
+	if ( $url ) {
+		return '<img src="' . $url . '" alt="" loading="lazy" />';
+	}
+
+	return $default_svg;
+}
+
+/**
+ * Renderuje same karty masaży (używane przy pierwszym ładowaniu oraz w zapytaniu AJAX).
+ */
+function mp_render_cards_html( $items, $custom_icons, $active_category = 'wszystkie' ) {
+	$features_map = mp_get_features_map();
+	$found        = false;
+
+	ob_start();
+	foreach ( $items as $item ) :
+		$item_cat = ! empty( $item['category'] ) ? $item['category'] : 'masaze';
+
+		if ( 'wszystkie' !== $active_category && $item_cat !== $active_category ) {
+			continue;
+		}
+
+		$found       = true;
+		$title       = isset( $item['title'] ) ? $item['title'] : '';
+		$description = isset( $item['description'] ) ? $item['description'] : '';
+		$variants    = isset( $item['variants'] ) && is_array( $item['variants'] ) ? $item['variants'] : array();
+		$scope       = isset( $item['scope'] ) && is_array( $item['scope'] ) ? $item['scope'] : array();
+		?>
+		<article class="mp-card">
+			<div class="mp-card__body">
+				<?php if ( ! empty( $title ) ) : ?>
+					<h3 class="mp-card__title"><?php echo esc_html( $title ); ?></h3>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $description ) ) : ?>
+					<p class="mp-card__desc"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $variants ) ) : ?>
+					<ul class="mp-variants">
+						<?php foreach ( $variants as $variant ) :
+							if ( empty( $variant['duration'] ) && empty( $variant['price'] ) ) continue;
+							?>
+							<li class="mp-variants__item">
+								<span class="mp-variants__duration"><?php echo esc_html( $variant['duration'] ?? '' ); ?></span>
+								<span class="mp-variants__dots"></span>
+								<span class="mp-variants__price"><?php echo esc_html( $variant['price'] ?? '' ); ?></span>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+			</div>
+
+			<div class="mp-features" aria-label="Właściwości masażu">
+				<?php
+				$single_props = array( 'strength', 'oils', 'clothing', 'pace' );
+				foreach ( $single_props as $prop ) :
+					$val = isset( $item[ $prop ] ) ? $item[ $prop ] : '';
+					if ( isset( $features_map[ $prop ][ $val ] ) ) :
+						$data = $features_map[ $prop ][ $val ];
+						?>
+						<span class="mp-feature-icon" tabindex="0" data-tooltip="<?php echo esc_attr( $data['label'] ); ?>" aria-label="<?php echo esc_attr( $data['label'] ); ?>">
+							<?php echo mp_get_icon_markup( $val, $data['svg'], $custom_icons ); ?>
+						</span>
+						<?php
+					endif;
+				endforeach;
+
+				foreach ( $scope as $part ) :
+					if ( isset( $features_map['scope'][ $part ] ) ) :
+						$data = $features_map['scope'][ $part ];
+						?>
+						<span class="mp-feature-icon mp-feature-icon--scope" tabindex="0" data-tooltip="<?php echo esc_attr( $data['label'] ); ?>" aria-label="<?php echo esc_attr( $data['label'] ); ?>">
+							<?php echo mp_get_icon_markup( $part, $data['svg'], $custom_icons ); ?>
+						</span>
+						<?php
+					endif;
+				endforeach;
+				?>
+			</div>
+		</article>
+		<?php
+	endforeach;
+
+	if ( ! $found ) {
+		echo '<p class="mp-empty">Brak pozycji w wybranej kategorii.</p>';
+	}
+
+	return ob_get_clean();
+}
+
 function mp_render_pricelist_block( $attributes ) {
-	$items = isset( $attributes['items'] ) ? $attributes['items'] : array();
+	$items        = isset( $attributes['items'] ) ? $attributes['items'] : array();
+	$custom_icons = isset( $attributes['customIcons'] ) && is_array( $attributes['customIcons'] ) ? $attributes['customIcons'] : array();
+
 	if ( empty( $items ) ) {
 		return '';
 	}
 
-	$features_map       = mp_get_features_map();
-	$wrapper_attributes = get_block_wrapper_attributes( array( 'class' => 'mp-grid' ) );
+	$categories = array(
+		'wszystkie' => 'Wszystkie',
+		'masaze'    => 'Masaże',
+		'zabiegi'   => 'Zabiegi i rytuały',
+		'pakiety'   => 'Pakiety',
+	);
+
+	$encoded_attrs      = base64_encode( wp_json_encode( $attributes ) );
+	$wrapper_attributes = get_block_wrapper_attributes( array(
+		'class'       => 'mp-pricelist-wrap',
+		'data-ajax'   => esc_url( admin_url( 'admin-ajax.php' ) ),
+		'data-nonce'  => wp_create_nonce( 'mp_filter_nonce' ),
+		'data-config' => esc_attr( $encoded_attrs ),
+	) );
 
 	ob_start();
 	?>
 	<div <?php echo $wrapper_attributes; ?>>
-		<?php foreach ( $items as $item ) :
-			$title       = isset( $item['title'] ) ? $item['title'] : '';
-			$description = isset( $item['description'] ) ? $item['description'] : '';
-			$variants    = isset( $item['variants'] ) && is_array( $item['variants'] ) ? $item['variants'] : array();
-			$scope       = isset( $item['scope'] ) && is_array( $item['scope'] ) ? $item['scope'] : array();
-			?>
-			<article class="mp-card">
-				<div class="mp-card__body">
-					<?php if ( ! empty( $title ) ) : ?>
-						<h3 class="mp-card__title"><?php echo esc_html( $title ); ?></h3>
-					<?php endif; ?>
+		<div class="mp-filters" role="tablist" aria-label="Kategorie usług">
+			<?php foreach ( $categories as $slug => $label ) : ?>
+				<button
+					type="button"
+					class="mp-filter-btn<?php echo 'wszystkie' === $slug ? ' is-active' : ''; ?>"
+					data-category="<?php echo esc_attr( $slug ); ?>"
+				>
+					<?php echo esc_html( $label ); ?>
+				</button>
+			<?php endforeach; ?>
+		</div>
 
-					<?php if ( ! empty( $description ) ) : ?>
-						<p class="mp-card__desc"><?php echo wp_kses_post( $description ); ?></p>
-					<?php endif; ?>
-
-					<?php if ( ! empty( $variants ) ) : ?>
-						<ul class="mp-variants">
-							<?php foreach ( $variants as $variant ) :
-								if ( empty( $variant['duration'] ) && empty( $variant['price'] ) ) continue;
-								?>
-								<li class="mp-variants__item">
-									<span class="mp-variants__duration"><?php echo esc_html( $variant['duration'] ?? '' ); ?></span>
-									<span class="mp-variants__dots"></span>
-									<span class="mp-variants__price"><?php echo esc_html( $variant['price'] ?? '' ); ?></span>
-								</li>
-							<?php endforeach; ?>
-						</ul>
-					<?php endif; ?>
-				</div>
-
-				<div class="mp-features" aria-label="Właściwości masażu">
-					<?php
-					$single_props = array( 'strength', 'oils', 'clothing', 'pace' );
-					foreach ( $single_props as $prop ) :
-						$val = isset( $item[ $prop ] ) ? $item[ $prop ] : '';
-						if ( isset( $features_map[ $prop ][ $val ] ) ) :
-							$data = $features_map[ $prop ][ $val ];
-							?>
-							<span class="mp-feature-icon" tabindex="0" data-tooltip="<?php echo esc_attr( $data['label'] ); ?>" aria-label="<?php echo esc_attr( $data['label'] ); ?>">
-								<?php echo $data['svg']; ?>
-							</span>
-							<?php
-						endif;
-					endforeach;
-
-					foreach ( $scope as $part ) :
-						if ( isset( $features_map['scope'][ $part ] ) ) :
-							$data = $features_map['scope'][ $part ];
-							?>
-							<span class="mp-feature-icon mp-feature-icon--scope" tabindex="0" data-tooltip="<?php echo esc_attr( $data['label'] ); ?>" aria-label="<?php echo esc_attr( $data['label'] ); ?>">
-								<?php echo $data['svg']; ?>
-							</span>
-							<?php
-						endif;
-					endforeach;
-					?>
-				</div>
-			</article>
-		<?php endforeach; ?>
+		<div class="mp-grid">
+			<?php echo mp_render_cards_html( $items, $custom_icons, 'wszystkie' ); ?>
+		</div>
 	</div>
 	<?php
 	return ob_get_clean();
 }
+
+/**
+ * Obsługa filtrowania AJAX.
+ */
+function mp_ajax_filter_items() {
+	check_ajax_referer( 'mp_filter_nonce', 'nonce' );
+
+	$category   = isset( $_POST['category'] ) ? sanitize_key( $_POST['category'] ) : 'wszystkie';
+	$raw_config = isset( $_POST['config'] ) ? sanitize_text_field( wp_unslash( $_POST['config'] ) ) : '';
+	$attributes = json_decode( base64_decode( $raw_config ), true );
+
+	if ( ! is_array( $attributes ) ) {
+		wp_send_json_error();
+	}
+
+	$items        = isset( $attributes['items'] ) && is_array( $attributes['items'] ) ? $attributes['items'] : array();
+	$custom_icons = isset( $attributes['customIcons'] ) && is_array( $attributes['customIcons'] ) ? $attributes['customIcons'] : array();
+
+	$html = mp_render_cards_html( $items, $custom_icons, $category );
+	wp_send_json_success( array( 'html' => $html ) );
+}
+add_action( 'wp_ajax_mp_filter_items', 'mp_ajax_filter_items' );
+add_action( 'wp_ajax_nopriv_mp_filter_items', 'mp_ajax_filter_items' );

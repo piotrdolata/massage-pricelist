@@ -1,7 +1,8 @@
 (function (blocks, element, blockEditor, components) {
 	const el = element.createElement;
 	const { useState, Fragment } = element;
-	const { useBlockProps, InspectorControls } = blockEditor;
+	const { useBlockProps, InspectorControls, MediaUpload, MediaUploadCheck } =
+		blockEditor;
 	const {
 		PanelBody,
 		SelectControl,
@@ -18,28 +19,44 @@
 		{ key: "nogi", label: "Nogi" },
 	];
 
-	const LABELS = {
-		silny: "Siła: Silny",
-		umiarkowany: "Siła: Umiarkowany",
-		tak: "Olejki: Tak",
-		nie: "Olejki: Nie",
-		bielizna: "Ubranie: Bielizna",
-		nago: "Ubranie: Nago",
-		szybkie: "Tempo: Szybkie",
-		umiarkowane: "Tempo: Umiarkowane",
-		wolne: "Tempo: Wolne",
-		kark: "Kark",
-		barki: "Barki",
-		plecy: "Plecy",
-		nogi: "Nogi",
-	};
+	const ICON_KEYS = [
+		{ key: "silny", label: "Siła: Silny" },
+		{ key: "umiarkowany", label: "Siła: Umiarkowany" },
+		{ key: "tak", label: "Olejki: Tak" },
+		{ key: "nie", label: "Olejki: Nie" },
+		{ key: "bielizna", label: "Ubranie: Bielizna" },
+		{ key: "nago", label: "Ubranie: Nago" },
+		{ key: "szybkie", label: "Tempo: Szybkie" },
+		{ key: "umiarkowane", label: "Tempo: Umiarkowane" },
+		{ key: "wolne", label: "Tempo: Wolne" },
+		{ key: "kark", label: "Zakres: Kark" },
+		{ key: "barki", label: "Zakres: Barki" },
+		{ key: "plecy", label: "Zakres: Plecy" },
+		{ key: "nogi", label: "Zakres: Nogi" },
+	];
+
+	const LABELS = ICON_KEYS.reduce((acc, item) => {
+		acc[item.key] = item.label;
+		return acc;
+	}, {});
 
 	blocks.registerBlockType("studio/massage-pricelist", {
 		edit: function (props) {
 			const { attributes, setAttributes } = props;
 			const items = attributes.items || [];
+			const customIcons = attributes.customIcons || {};
 			const [activeIndex, setActiveIndex] = useState(0);
 			const blockProps = useBlockProps({ className: "mp-grid mp-editor-grid" });
+
+			const setCustomIcon = (featureKey, media) => {
+				const nextIcons = Object.assign({}, customIcons);
+				if (media && media.url) {
+					nextIcons[featureKey] = { id: media.id, url: media.url };
+				} else {
+					delete nextIcons[featureKey];
+				}
+				setAttributes({ customIcons: nextIcons });
+			};
 
 			const updateItem = (index, field, value) => {
 				const next = items.map((item, idx) =>
@@ -71,6 +88,17 @@
 				}
 			};
 
+			const moveItem = (index, direction) => {
+				const targetIndex = index + direction;
+				if (targetIndex < 0 || targetIndex >= items.length) return;
+				const next = [...items];
+				const temp = next[index];
+				next[index] = next[targetIndex];
+				next[targetIndex] = temp;
+				setAttributes({ items: next });
+				setActiveIndex(targetIndex);
+			};
+
 			const updateVariant = (itemIdx, varIdx, key, val) => {
 				const variants = (items[itemIdx].variants || []).map((v, i) =>
 					i === varIdx ? Object.assign({}, v, { [key]: val }) : v,
@@ -93,12 +121,24 @@
 				updateItem(itemIdx, "variants", variants);
 			};
 
+
 			const toggleScope = (itemIdx, partKey, checked) => {
 				const current = items[itemIdx].scope || [];
 				const next = checked
 					? [...current, partKey]
 					: current.filter((k) => k !== partKey);
 				updateItem(itemIdx, "scope", next);
+			};
+
+			const renderTagWithIcon = (key) => {
+				const iconUrl = customIcons[key] && customIcons[key].url;
+				return el(
+					"span",
+					{ key: key, className: "mp-tag" },
+					iconUrl &&
+						el("img", { src: iconUrl, className: "mp-tag__icon", alt: "" }),
+					LABELS[key],
+				);
 			};
 
 			const activeItem = items[activeIndex] || null;
@@ -170,12 +210,78 @@
 								}),
 							),
 						),
+					el(
+						PanelBody,
+						{ title: "Własne ikony (SVG / Media)", initialOpen: false },
+						ICON_KEYS.map((item) => {
+							const currentIcon = customIcons[item.key];
+							return el(
+								"div",
+								{ key: item.key, className: "mp-icon-picker-row" },
+								el(
+									"div",
+									{ className: "mp-icon-picker-row__info" },
+									currentIcon && currentIcon.url
+										? el("img", {
+												src: currentIcon.url,
+												className: "mp-icon-picker-row__preview",
+												alt: "",
+											})
+										: el(
+												"span",
+												{ className: "mp-icon-picker-row__placeholder" },
+												"SVG",
+											),
+									el(
+										"span",
+										{ className: "mp-icon-picker-row__label" },
+										item.label,
+									),
+								),
+								el(
+									"div",
+									{ className: "mp-icon-picker-row__actions" },
+									el(
+										MediaUploadCheck,
+										null,
+										el(MediaUpload, {
+											onSelect: (media) => setCustomIcon(item.key, media),
+											allowedTypes: ["image/svg+xml", "image"],
+											value: currentIcon ? currentIcon.id : "",
+											render: ({ open }) =>
+												el(
+													Button,
+													{
+														variant: "secondary",
+														isSmall: true,
+														onClick: open,
+													},
+													currentIcon ? "Zmień" : "Wybierz",
+												),
+										}),
+									),
+									currentIcon &&
+										el(
+											Button,
+											{
+												isDestructive: true,
+												isSmall: true,
+												variant: "link",
+												onClick: () => setCustomIcon(item.key, null),
+											},
+											"Reset",
+										),
+								),
+							);
+						}),
+					),
 				),
 				el(
 					"div",
 					blockProps,
 					items.map((item, index) => {
 						const isSelected = index === activeIndex;
+						const variants = item.variants || [];
 						return el(
 							"div",
 							{
@@ -193,16 +299,40 @@
 									"Pozycja #" + (index + 1),
 								),
 								el(
-									Button,
-									{
-										isDestructive: true,
-										variant: "link",
+									"div",
+									{ className: "mp-editor-card__actions" },
+									el(Button, {
+										icon: "arrow-left-alt2",
+										label: "Przesuń wcześniej",
+										isSmall: true,
+										disabled: index === 0,
 										onClick: (e) => {
 											e.stopPropagation();
-											removeItem(index);
+											moveItem(index, -1);
 										},
-									},
-									"Usuń masaż",
+									}),
+									el(Button, {
+										icon: "arrow-right-alt2",
+										label: "Przesuń dalej",
+										isSmall: true,
+										disabled: index === items.length - 1,
+										onClick: (e) => {
+											e.stopPropagation();
+											moveItem(index, 1);
+										},
+									}),
+									el(
+										Button,
+										{
+											isDestructive: true,
+											variant: "link",
+											onClick: (e) => {
+												e.stopPropagation();
+												removeItem(index);
+											},
+										},
+										"Usuń",
+									),
 								),
 							),
 							el(TextControl, {
@@ -220,7 +350,7 @@
 								"div",
 								{ className: "mp-editor-variants" },
 								el("strong", null, "Warianty (Czas i Cena):"),
-								(item.variants || []).map((v, vIdx) =>
+								variants.map((v, vIdx) =>
 									el(
 										"div",
 										{ key: vIdx, className: "mp-editor-variant-row" },
@@ -239,6 +369,7 @@
 										el(Button, {
 											isDestructive: true,
 											icon: "no-alt",
+											isSmall: true,
 											label: "Usuń wariant",
 											onClick: () => removeVariant(index, vIdx),
 										}),
@@ -249,25 +380,20 @@
 									{
 										variant: "secondary",
 										isSmall: true,
+										style: { marginTop: "8px" },
 										onClick: () => addVariant(index),
 									},
-									"+ Dodaj wariant czasu/ceny",
+									"+ Dodaj wariant",
 								),
 							),
 							el(
 								"div",
 								{ className: "mp-editor-tags" },
-								el("span", { className: "mp-tag" }, LABELS[item.strength]),
-								el("span", { className: "mp-tag" }, LABELS[item.oils]),
-								el("span", { className: "mp-tag" }, LABELS[item.clothing]),
-								el("span", { className: "mp-tag" }, LABELS[item.pace]),
-								(item.scope || []).map((s) =>
-									el(
-										"span",
-										{ key: s, className: "mp-tag mp-tag--scope" },
-										LABELS[s],
-									),
-								),
+								renderTagWithIcon(item.strength),
+								renderTagWithIcon(item.oils),
+								renderTagWithIcon(item.clothing),
+								renderTagWithIcon(item.pace),
+								(item.scope || []).map((s) => renderTagWithIcon(s)),
 							),
 						);
 					}),

@@ -1,8 +1,41 @@
+/* Przyciski filtrów */
+.mp-filters {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 12px;
+	margin-bottom: 32px;
+}
+
+.mp-filter-btn {
+	font-family: "Jost", sans-serif;
+	font-size: 0.95rem;
+	font-weight: 500;
+	padding: 10px 22px;
+	border-radius: 30px;
+	border: 1px solid #d8d0c5;
+	background: #ffffff;
+	color: #333;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.mp-filter-btn:hover {
+	border-color: #8c6239;
+	color: #8c6239;
+}
+
+.mp-filter-btn.is-active {
+	background: #8c6239;
+	border-color: #8c6239;
+	color: #ffffff;
+}
+
 /* Siatka 2-kolumnowa */
 .mp-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
-	gap: 24px;
+	gap: 48px;
 	margin: 2rem 0;
 }
 
@@ -14,24 +47,22 @@
 
 /* Karta masażu */
 .mp-card {
-	background: #ffffff;
-	border: 1px solid #e6e2dd;
-	border-radius: 12px;
-	padding: 24px;
+	/* padding: 24px; */
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
 	transition: box-shadow 0.2s ease;
 }
 
-.mp-card:hover {
+/* .mp-card:hover {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
+} */
 
 .mp-card__title {
+	font-family: "Fraunces", serif;
 	margin: 0 0 8px;
 	font-size: 1.35rem;
-	font-weight: 600;
+	font-weight: 500;
 	color: #1e1e1e;
 }
 
@@ -57,19 +88,21 @@
 }
 
 .mp-variants__duration {
-	font-weight: 500;
+	font-weight: 400;
 	color: #333;
+	font-family: "Jost", sans-serif;
 }
 
 .mp-variants__dots {
 	flex: 1;
-	border-bottom: 1px dotted #ccc;
+	border-bottom: 1px dotted #999999;
 	margin: 0 10px;
 }
 
 .mp-variants__price {
-	font-weight: 700;
+	font-weight: 500;
 	color: #8c6239;
+	font-family: "Jost", sans-serif;
 }
 
 /* Rząd ikon właściwości + Tooltip */
@@ -78,7 +111,7 @@
 	flex-wrap: wrap;
 	gap: 10px;
 	padding-top: 16px;
-	border-top: 1px solid #f0ece8;
+	/* border-top: 1px solid #f0ece8; */
 }
 
 .mp-feature-icon {
@@ -218,4 +251,10 @@
 	padding: 16px;
 	border: 2px dashed #c3c4c7;
 	border-radius: 12px;
+}
+
+.mp-editor-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
