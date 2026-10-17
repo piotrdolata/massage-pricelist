@@ -2,21 +2,26 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "studio/massage-pricelist",
-	"version": "1.0.0",
+	"version": "1.2.0",
 	"title": "Cennik Masaży",
 	"category": "widgets",
 	"icon": "list-view",
-	"description": "Dwukolumnowy cennik usług masażu z wariantami cenowymi i ikonami właściwości.",
+	"description": "Dwukolumnowy cennik usług masażu z filtrowaniem AJAX i własnymi ikonami SVG.",
 	"supports": {
 		"html": false,
 		"align": ["wide", "full"]
 	},
 	"attributes": {
+		"customIcons": {
+			"type": "object",
+			"default": {}
+		},
 		"items": {
 			"type": "array",
 			"default": [
 				{
 					"title": "Masaż Klasyczny",
+					"category": "masaze",
 					"description": "Rozluźnia napięte mięśnie i poprawia krążenie.",
 					"variants": [
 						{ "duration": "60 min", "price": "180 zł" },
@@ -32,5 +37,6 @@
 		}
 	},
 	"editorScript": "file:./edit.js",
+	"viewScript": "file:./view.js",
 	"style": "file:./style.css"
 }
