@@ -192,3 +192,40 @@
 	align-items: center;
 	margin-top: 8px;
 }
+
+.mp-custom-label {
+	display: inline-block;
+	font-family: "Jost", sans-serif;
+	font-size: 10px;
+	color: #8c6239;
+	text-transform: uppercase;
+	background: #f8f6f3;
+	padding: 6px 10px;
+	border-radius: 999px;
+	margin-bottom: 8px;
+}
+
+.mp-promo-tag {
+	display: inline-block;
+	font-family: "Jost", sans-serif;
+	font-size: 10px;
+	color: #ffffff;
+	background: #ec522b;
+	text-transform: uppercase;
+	padding: 10px 16px;
+	border-radius: 12px;
+	margin-left: 8px;
+	margin-right: 8px;
+}
+
+.mp-promo-price {
+	font-weight: 700;
+	color: #ec522b;
+	margin-right: 8px;
+}
+
+.mp-old-price {
+	text-decoration: line-through;
+	color: #999;
+	font-size: 0.9em;
+}

@@ -153,17 +153,28 @@
 								initialOpen: true,
 							},
 							el(SelectControl, {
-								label: "Kategoria",
-								value: activeItem.category,
-								options: [
-									{ label: "Masaże", value: "masaze" },
-									{ label: "Zabiegi i rytuały", value: "zabiegi" },
-									{ label: "Pakiety", value: "pakiety" },
-								],
-								onChange: (val) => updateItem(activeIndex, "category", val),
-							}),
-							el(SelectControl, {
-								label: "Siła masażu",
+									label: "Kategoria",
+									value: activeItem.category,
+									options: [
+										{ label: "Masaże", value: "masaze" },
+										{ label: "Zabiegi i rytuały", value: "zabiegi" },
+										{ label: "Pakiety", value: "pakiety" },
+									],
+									onChange: (val) => updateItem(activeIndex, "category", val),
+								}),
+								el(TextControl, {
+									label: "Etykieta specjalna (nad nazwą usługi)",
+									value: activeItem.customLabel || "",
+									placeholder: "np. NOWOŚĆ",
+									onChange: (val) => updateItem(activeIndex, "customLabel", val),
+								}),
+								el(CheckboxControl, {
+									label: "Promocja (aktywuje ceny promocyjne)",
+									checked: !!activeItem.isPromo,
+									onChange: (val) => updateItem(activeIndex, "isPromo", val),
+								}),
+								el(SelectControl, {
+									label: "Siła masażu",
 								value: activeItem.strength,
 								options: [
 									{ label: "intensywny", value: "intensywny" },
@@ -304,6 +315,12 @@
 											value: v.price,
 											onChange: (val) =>
 												updateVariant(index, vIdx, "price", val),
+										}),
+										item.isPromo && el(TextControl, {
+											placeholder: "np. 150 zł (Promo)",
+											value: v.promoPrice || "",
+											onChange: (val) =>
+												updateVariant(index, vIdx, "promoPrice", val),
 										}),
 										el(Button, {
 											isDestructive: true,

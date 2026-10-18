@@ -70,9 +70,15 @@ add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
 			$description = isset( $item['description'] ) ? $item['description'] : '';
 			$variants    = isset( $item['variants'] ) && is_array( $item['variants'] ) ? $item['variants'] : array();
 			$scope       = isset( $item['scope'] ) && is_array( $item['scope'] ) ? $item['scope'] : array();
+			$custom_label = isset( $item['customLabel'] ) ? $item['customLabel'] : '';
+			$is_promo    = ! empty( $item['isPromo'] );
 			?>
 			<article class="mp-card">
 				<div class="mp-card__body">
+					<?php if ( ! empty( $custom_label ) ) : ?>
+						<span class="mp-custom-label"><?php echo esc_html( $custom_label ); ?></span>
+					<?php endif; ?>
+
 					<?php if ( ! empty( $title ) ) : ?>
 						<h3 class="mp-card__title"><?php echo esc_html( $title ); ?></h3>
 					<?php endif; ?>
@@ -85,17 +91,24 @@ add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
 						<ul class="mp-variants">
 							<?php foreach ( $variants as $variant ) :
 								if ( empty( $variant['duration'] ) && empty( $variant['price'] ) ) continue;
+								$price_val = esc_html( $variant['price'] ?? '' );
+								$promo_val = esc_html( $variant['promoPrice'] ?? '' );
 								?>
 								<li class="mp-variants__item">
 									<span class="mp-variants__duration"><?php echo esc_html( $variant['duration'] ?? '' ); ?></span>
 									<span class="mp-variants__dots"></span>
-									<span class="mp-variants__price"><?php echo esc_html( $variant['price'] ?? '' ); ?></span>
+									<?php if ( $is_promo && ! empty( $promo_val ) ) : ?>
+										<span class="mp-promo-tag">PROMOCJA</span>
+										<span class="mp-variants__price mp-promo-price"><?php echo $promo_val; ?></span>
+										<span class="mp-variants__price mp-old-price"><?php echo $price_val; ?></span>
+									<?php else : ?>
+										<span class="mp-variants__price"><?php echo $price_val; ?></span>
+									<?php endif; ?>
 								</li>
 							<?php endforeach; ?>
 						</ul>
 					<?php endif; ?>
 				</div>
-
 				<div class="mp-features" aria-label="Właściwości masażu">
 					<?php
 					$single_props = array( 'strength', 'oils', 'clothing', 'pace' );
