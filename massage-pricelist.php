@@ -96,11 +96,11 @@ add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
 								?>
 								<li class="mp-variants__item">
 									<span class="mp-variants__duration"><?php echo esc_html( $variant['duration'] ?? '' ); ?></span>
-									<span class="mp-variants__dots"></span>
+									<span class="mp-variants__dots" aria-hidden="true"></span>
 									<?php if ( $is_promo && ! empty( $promo_val ) ) : ?>
 										<span class="mp-promo-tag">PROMOCJA</span>
-										<span class="mp-variants__price mp-promo-price"><?php echo $promo_val; ?></span>
-										<span class="mp-variants__price mp-old-price"><?php echo $price_val; ?></span>
+										<span class="mp-variants__price mp-promo-price"><span class="screen-reader-text">Nowa cena: </span><?php echo $promo_val; ?></span>
+										<del class="mp-variants__price mp-old-price"><span class="screen-reader-text">Stara cena: </span><?php echo $price_val; ?></del>
 									<?php else : ?>
 										<span class="mp-variants__price"><?php echo $price_val; ?></span>
 									<?php endif; ?>
@@ -109,16 +109,16 @@ add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
 						</ul>
 					<?php endif; ?>
 				</div>
-				<div class="mp-features" aria-label="Właściwości masażu">
+				<ul class="mp-features" aria-label="Właściwości masażu">
 					<?php
 					$single_props = array( 'strength', 'oils', 'clothing', 'pace' );
 					foreach ( $single_props as $prop ) :
 						$val = isset( $item[ $prop ] ) ? $item[ $prop ] : '';
 						if ( isset( $labels[ $val ] ) ) :
 							?>
-							<span class="mp-feature-pill">
+							<li class="mp-feature-pill">
 								<?php echo esc_html( $labels[ $val ] ); ?>
-							</span>
+							</li>
 							<?php
 						endif;
 					endforeach;
@@ -132,14 +132,14 @@ add_action( 'enqueue_block_assets', 'mp_enqueue_google_fonts' );
 						}
 						if ( ! empty( $scope_labels ) ) {
 							?>
-							<span class="mp-feature-pill">
+							<li class="mp-feature-pill">
 								<?php echo esc_html( 'zakres: ' . implode( ', ', $scope_labels ) ); ?>
-							</span>
+							</li>
 							<?php
 						}
 					}
 					?>
-				</div>
+				</ul>
 			</article>
 			<?php
 		endforeach;
@@ -176,19 +176,22 @@ function mp_render_pricelist_block( $attributes ) {
 	ob_start();
 	?>
 	<div <?php echo $wrapper_attributes; ?>>
-		<div class="mp-filters" role="tablist" aria-label="Kategorie usług">
-			<?php foreach ( $categories as $slug => $label ) : ?>
+		<div class="mp-filters" role="group" aria-label="Kategorie usług">
+			<?php foreach ( $categories as $slug => $label ) :
+				$is_active = ( 'wszystkie' === $slug );
+			?>
 				<button
 					type="button"
-					class="mp-filter-btn<?php echo 'wszystkie' === $slug ? ' is-active' : ''; ?>"
+					class="mp-filter-btn<?php echo $is_active ? ' is-active' : ''; ?>"
 					data-category="<?php echo esc_attr( $slug ); ?>"
+					aria-pressed="<?php echo $is_active ? 'true' : 'false'; ?>"
 				>
 					<?php echo esc_html( $label ); ?>
 				</button>
 			<?php endforeach; ?>
 		</div>
 
-		<div class="mp-grid">
+		<div class="mp-grid" aria-live="polite">
 			<?php echo mp_render_cards_html( $items, 'wszystkie' ); ?>
 		</div>
 	</div>
