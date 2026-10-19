@@ -1,8 +1,7 @@
 (function (blocks, element, blockEditor, components) {
 	const el = element.createElement;
 	const { useState, Fragment } = element;
-	const { useBlockProps, InspectorControls, MediaUpload, MediaUploadCheck } =
-		blockEditor;
+	const { useBlockProps, InspectorControls } = blockEditor;
 	const {
 		PanelBody,
 		SelectControl,
@@ -13,50 +12,44 @@
 	} = components;
 
 	const SCOPE_OPTIONS = [
-		{ key: "kark", label: "Kark" },
-		{ key: "barki", label: "Barki" },
-		{ key: "plecy", label: "Plecy" },
-		{ key: "nogi", label: "Nogi" },
+		{ key: "głowa", label: "głowa" },
+		{ key: "kark", label: "kark" },
+		{ key: "plecy", label: "plecy" },
+		{ key: "nogi", label: "nogi" },
+		{ key: "ramiona", label: "ramiona" },
+		{ key: "stopy", label: "stopy" },
+		{ key: "dłonie", label: "dłonie" },
 	];
 
-	const ICON_KEYS = [
-		{ key: "silny", label: "Siła: Silny" },
-		{ key: "umiarkowany", label: "Siła: Umiarkowany" },
-		{ key: "tak", label: "Olejki: Tak" },
-		{ key: "nie", label: "Olejki: Nie" },
-		{ key: "bielizna", label: "Ubranie: Bielizna" },
-		{ key: "nago", label: "Ubranie: Nago" },
-		{ key: "szybkie", label: "Tempo: Szybkie" },
-		{ key: "umiarkowane", label: "Tempo: Umiarkowane" },
-		{ key: "wolne", label: "Tempo: Wolne" },
-		{ key: "kark", label: "Zakres: Kark" },
-		{ key: "barki", label: "Zakres: Barki" },
-		{ key: "plecy", label: "Zakres: Plecy" },
-		{ key: "nogi", label: "Zakres: Nogi" },
-	];
-
-	const LABELS = ICON_KEYS.reduce((acc, item) => {
-		acc[item.key] = item.label;
-		return acc;
-	}, {});
+	const LABELS = {
+		"intensywny": "intensywny",
+		"silny": "intensywny",
+		"umiarkowany": "relaksacyjny",
+		"bielizna": "w bieliźnie",
+		"nago": "bez ubrania",
+		"relaksacyjny": "relaksacyjny",
+		"tak": "z olejkami",
+		"nie": "bez olejków",
+		"w bieliźnie": "w bieliźnie",
+		"bez ubrania": "bez ubrania",
+		"wolne": "wolne tempo",
+		"umiarkowane": "tempo umiarkowane",
+		"szybkie": "szybkie tempo",
+		"głowa": "głowa",
+		"kark": "kark",
+		"plecy": "plecy",
+		"nogi": "nogi",
+		"ramiona": "ramiona",
+		"stopy": "stopy",
+		"dłonie": "dłonie",
+	};
 
 	blocks.registerBlockType("studio/massage-pricelist", {
 		edit: function (props) {
 			const { attributes, setAttributes } = props;
 			const items = attributes.items || [];
-			const customIcons = attributes.customIcons || {};
 			const [activeIndex, setActiveIndex] = useState(0);
 			const blockProps = useBlockProps({ className: "mp-grid mp-editor-grid" });
-
-			const setCustomIcon = (featureKey, media) => {
-				const nextIcons = Object.assign({}, customIcons);
-				if (media && media.url) {
-					nextIcons[featureKey] = { id: media.id, url: media.url };
-				} else {
-					delete nextIcons[featureKey];
-				}
-				setAttributes({ customIcons: nextIcons });
-			};
 
 			const updateItem = (index, field, value) => {
 				const next = items.map((item, idx) =>
@@ -69,12 +62,13 @@
 				const newItem = {
 					title: "Nowy masaż",
 					description: "",
+					category: "masaze",
 					variants: [{ duration: "60 min", price: "180 zł" }],
-					strength: "umiarkowany",
+					strength: "relaksacyjny",
 					oils: "tak",
-					clothing: "bielizna",
+					clothing: "w bieliźnie",
 					pace: "umiarkowane",
-					scope: ["plecy"],
+					scope: ["plecy", "kark", "ramiona"],
 				};
 				setAttributes({ items: [...items, newItem] });
 				setActiveIndex(items.length);
@@ -88,6 +82,13 @@
 				}
 			};
 
+			const updateVariant = (itemIdx, varIdx, key, val) => {
+				const variants = (items[itemIdx].variants || []).map((v, i) =>
+					i === varIdx ? Object.assign({}, v, { [key]: val }) : v,
+				);
+				updateItem(itemIdx, "variants", variants);
+			};
+
 			const moveItem = (index, direction) => {
 				const targetIndex = index + direction;
 				if (targetIndex < 0 || targetIndex >= items.length) return;
@@ -97,13 +98,6 @@
 				next[targetIndex] = temp;
 				setAttributes({ items: next });
 				setActiveIndex(targetIndex);
-			};
-
-			const updateVariant = (itemIdx, varIdx, key, val) => {
-				const variants = (items[itemIdx].variants || []).map((v, i) =>
-					i === varIdx ? Object.assign({}, v, { [key]: val }) : v,
-				);
-				updateItem(itemIdx, "variants", variants);
 			};
 
 			const addVariant = (itemIdx) => {
@@ -121,16 +115,6 @@
 				updateItem(itemIdx, "variants", variants);
 			};
 
-			const moveVariant = (itemIdx, varIdx, direction) => {
-				const variants = [...(items[itemIdx].variants || [])];
-				const targetIdx = varIdx + direction;
-				if (targetIdx < 0 || targetIdx >= variants.length) return;
-				const temp = variants[varIdx];
-				variants[varIdx] = variants[targetIdx];
-				variants[targetIdx] = temp;
-				updateItem(itemIdx, "variants", variants);
-			};
-
 			const toggleScope = (itemIdx, partKey, checked) => {
 				const current = items[itemIdx].scope || [];
 				const next = checked
@@ -139,15 +123,16 @@
 				updateItem(itemIdx, "scope", next);
 			};
 
-			const renderTagWithIcon = (key) => {
-				const iconUrl = customIcons[key] && customIcons[key].url;
-				return el(
-					"span",
-					{ key: key, className: "mp-tag" },
-					iconUrl &&
-						el("img", { src: iconUrl, className: "mp-tag__icon", alt: "" }),
-					LABELS[key],
-				);
+			const renderTag = (key) => {
+				if (!LABELS[key]) return null;
+				return el("span", { key: key, className: "mp-feature-pill" }, LABELS[key]);
+			};
+
+			const renderScopeTag = (scopeArray) => {
+				if (!scopeArray || !scopeArray.length) return null;
+				const labels = scopeArray.map(k => LABELS[k]).filter(Boolean).join(', ');
+				if (!labels) return null;
+				return el("span", { className: "mp-feature-pill" }, "zakres: " + labels);
 			};
 
 			const activeItem = items[activeIndex] || null;
@@ -168,11 +153,32 @@
 								initialOpen: true,
 							},
 							el(SelectControl, {
-								label: "Siła masażu",
+									label: "Kategoria",
+									value: activeItem.category,
+									options: [
+										{ label: "Masaże", value: "masaze" },
+										{ label: "Zabiegi i rytuały", value: "zabiegi" },
+										{ label: "Pakiety", value: "pakiety" },
+									],
+									onChange: (val) => updateItem(activeIndex, "category", val),
+								}),
+								el(TextControl, {
+									label: "Etykieta specjalna (nad nazwą usługi)",
+									value: activeItem.customLabel || "",
+									placeholder: "np. NOWOŚĆ",
+									onChange: (val) => updateItem(activeIndex, "customLabel", val),
+								}),
+								el(CheckboxControl, {
+									label: "Promocja (aktywuje ceny promocyjne)",
+									checked: !!activeItem.isPromo,
+									onChange: (val) => updateItem(activeIndex, "isPromo", val),
+								}),
+								el(SelectControl, {
+									label: "Siła masażu",
 								value: activeItem.strength,
 								options: [
-									{ label: "Umiarkowany", value: "umiarkowany" },
-									{ label: "Silny", value: "silny" },
+									{ label: "intensywny", value: "intensywny" },
+									{ label: "relaksacyjny", value: "relaksacyjny" },
 								],
 								onChange: (val) => updateItem(activeIndex, "strength", val),
 							}),
@@ -180,8 +186,8 @@
 								label: "Olejki",
 								value: activeItem.oils,
 								options: [
-									{ label: "Tak (z olejkami)", value: "tak" },
-									{ label: "Nie (bez olejków)", value: "nie" },
+									{ label: "z olejkami", value: "tak" },
+									{ label: "bez olejków", value: "nie" },
 								],
 								onChange: (val) => updateItem(activeIndex, "oils", val),
 							}),
@@ -189,8 +195,8 @@
 								label: "Ubranie",
 								value: activeItem.clothing,
 								options: [
-									{ label: "Bielizna", value: "bielizna" },
-									{ label: "Nago", value: "nago" },
+									{ label: "w bieliźnie", value: "w bieliźnie" },
+									{ label: "bez ubrania", value: "bez ubrania" },
 								],
 								onChange: (val) => updateItem(activeIndex, "clothing", val),
 							}),
@@ -198,9 +204,9 @@
 								label: "Tempo",
 								value: activeItem.pace,
 								options: [
-									{ label: "Wolne", value: "wolne" },
-									{ label: "Umiarkowane", value: "umiarkowane" },
-									{ label: "Szybkie", value: "szybkie" },
+									{ label: "wolne tempo", value: "wolne" },
+									{ label: "tempo umiarkowane", value: "umiarkowane" },
+									{ label: "szybkie tempo", value: "szybkie" },
 								],
 								onChange: (val) => updateItem(activeIndex, "pace", val),
 							}),
@@ -219,71 +225,6 @@
 								}),
 							),
 						),
-					el(
-						PanelBody,
-						{ title: "Własne ikony (SVG / Media)", initialOpen: false },
-						ICON_KEYS.map((item) => {
-							const currentIcon = customIcons[item.key];
-							return el(
-								"div",
-								{ key: item.key, className: "mp-icon-picker-row" },
-								el(
-									"div",
-									{ className: "mp-icon-picker-row__info" },
-									currentIcon && currentIcon.url
-										? el("img", {
-												src: currentIcon.url,
-												className: "mp-icon-picker-row__preview",
-												alt: "",
-											})
-										: el(
-												"span",
-												{ className: "mp-icon-picker-row__placeholder" },
-												"SVG",
-											),
-									el(
-										"span",
-										{ className: "mp-icon-picker-row__label" },
-										item.label,
-									),
-								),
-								el(
-									"div",
-									{ className: "mp-icon-picker-row__actions" },
-									el(
-										MediaUploadCheck,
-										null,
-										el(MediaUpload, {
-											onSelect: (media) => setCustomIcon(item.key, media),
-											allowedTypes: ["image/svg+xml", "image"],
-											value: currentIcon ? currentIcon.id : "",
-											render: ({ open }) =>
-												el(
-													Button,
-													{
-														variant: "secondary",
-														isSmall: true,
-														onClick: open,
-													},
-													currentIcon ? "Zmień" : "Wybierz",
-												),
-										}),
-									),
-									currentIcon &&
-										el(
-											Button,
-											{
-												isDestructive: true,
-												isSmall: true,
-												variant: "link",
-												onClick: () => setCustomIcon(item.key, null),
-											},
-											"Reset",
-										),
-								),
-							);
-						}),
-					),
 				),
 				el(
 					"div",
@@ -375,19 +316,11 @@
 											onChange: (val) =>
 												updateVariant(index, vIdx, "price", val),
 										}),
-										el(Button, {
-											icon: "arrow-up-alt2",
-											label: "Wyżej",
-											isSmall: true,
-											disabled: vIdx === 0,
-											onClick: () => moveVariant(index, vIdx, -1),
-										}),
-										el(Button, {
-											icon: "arrow-down-alt2",
-											label: "Niżej",
-											isSmall: true,
-											disabled: vIdx === variants.length - 1,
-											onClick: () => moveVariant(index, vIdx, 1),
+										item.isPromo && el(TextControl, {
+											placeholder: "np. 150 zł (Promo)",
+											value: v.promoPrice || "",
+											onChange: (val) =>
+												updateVariant(index, vIdx, "promoPrice", val),
 										}),
 										el(Button, {
 											isDestructive: true,
@@ -412,11 +345,11 @@
 							el(
 								"div",
 								{ className: "mp-editor-tags" },
-								renderTagWithIcon(item.strength),
-								renderTagWithIcon(item.oils),
-								renderTagWithIcon(item.clothing),
-								renderTagWithIcon(item.pace),
-								(item.scope || []).map((s) => renderTagWithIcon(s)),
+								renderTag(item.strength),
+								renderTag(item.oils),
+								renderTag(item.clothing),
+								renderTag(item.pace),
+								renderScopeTag(item.scope),
 							),
 						);
 					}),

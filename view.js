@@ -12,8 +12,12 @@ document.addEventListener("DOMContentLoaded", function () {
 			btn.addEventListener("click", function () {
 				if (btn.classList.contains("is-active")) return;
 
-				buttons.forEach((b) => b.classList.remove("is-active"));
+				buttons.forEach((b) => {
+					b.classList.remove("is-active");
+					b.setAttribute("aria-pressed", "false");
+				});
 				btn.classList.add("is-active");
+				btn.setAttribute("aria-pressed", "true");
 
 				grid.classList.add("is-loading");
 
