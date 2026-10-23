@@ -20,13 +20,13 @@
 }
 
 .mp-filter-btn:hover {
-	border-color: #8c6239;
-	color: #8c6239;
+	border-color: #b46f52;
+	color: #b46f52;
 }
 
 .mp-filter-btn.is-active {
-	background: #8c6239;
-	border-color: #8c6239;
+	background: #b46f52;
+	border-color: #b46f52;
 	color: #ffffff;
 }
 
@@ -99,7 +99,7 @@
 }
 .mp-variants__price {
 	font-weight: 500;
-	color: #8c6239;
+	color: #b46f52;
 	font-family: "Jost", sans-serif;
 }
 
@@ -163,7 +163,7 @@
 .mp-feature-pill {
 	font-family: "Jost", sans-serif;
 	font-size: 10px;
-	color: #8c6239;
+	color: #b46f52;
 	text-transform: uppercase;
 	background: #f8f6f3;
 	padding: 6px 10px;
@@ -218,7 +218,7 @@
 
 .mp-promo-price {
   font-weight: 500;
-  color: #8c6239;
+  color: #b46f52;
   margin-right: 8px;
 }
 .mp-old-price {
