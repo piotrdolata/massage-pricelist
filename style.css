@@ -1,15 +1,15 @@
 /* Przyciski filtrów */
 .mp-filters {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 12px;
-  margin-bottom: 32px;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	gap: 12px;
+	margin-bottom: 32px;
 }
 .mp-filter-btn {
 	font-family: "Jost", sans-serif;
 	font-size: 0.95rem;
-	font-weight: 500;
+	font-weight: 400;
 	padding: 10px 22px;
 	border-radius: 30px;
 	border: 1px solid #d8d0c5;
@@ -33,9 +33,15 @@
 /* Siatka 2-kolumnowa */
 .mp-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 48px;
-	margin: 2rem 0;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 60px;
+	margin: 3rem 0 2rem 0;
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+	.mp-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
 }
 
 @media (max-width: 768px) {
@@ -58,18 +64,18 @@
 } */
 
 .mp-card__title {
-	font-family: "Fraunces", serif;
+	font-family: "Jost", serif;
 	margin: 0 0 8px;
 	font-size: 1.35rem;
-	font-weight: 500;
-	color: #1e1e1e;
+	font-weight: 600;
+	color: #333333;
 }
 
 .mp-card__desc {
 	margin: 0 0 18px;
 	font-size: 0.95rem;
 	color: #666;
-	line-height: 1.5;
+	line-height: 1.35;
 }
 
 /* Warianty czasowe i cenowe */
@@ -93,9 +99,9 @@
 }
 
 .mp-variants__dots {
-  flex: 1;
-  border-bottom: 1px dotted #999999;
-  margin: 0 4px 0 10px;
+	flex: 1;
+	border-bottom: 1px dotted #999999;
+	margin: 0 4px 0 10px;
 }
 .mp-variants__price {
 	font-weight: 500;
@@ -193,33 +199,33 @@
 }
 
 .mp-custom-label {
-  display: inline-block;
-  font-family: "Jost", sans-serif;
-  font-size: 16px;
-  color: #c19a3f;
-  text-transform: uppercase;
-  border-radius: 999px;
-  margin-bottom: 3px;
-  font-weight: 500;
+	display: inline-block;
+	font-family: "Jost", sans-serif;
+	font-size: 15px;
+	color: #333;
+	text-transform: uppercase;
+	border-radius: 999px;
+	margin-bottom: 3px;
+	font-weight: 400;
 }
 
 .mp-promo-tag {
-  display: inline-block;
-  font-family: "Jost", sans-serif;
-  font-size: 10px;
-  color: #ffffff;
-  background: #ec522b;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 12px;
-  margin-left: 8px;
-  margin-right: 8px;
+	display: inline-block;
+	font-family: "Jost", sans-serif;
+	font-size: 10px;
+	color: #ffffff;
+	background: #ec522b;
+	text-transform: uppercase;
+	padding: 2px 6px;
+	border-radius: 12px;
+	margin-left: 8px;
+	margin-right: 8px;
 }
 
 .mp-promo-price {
-  font-weight: 500;
-  color: #b46f52;
-  margin-right: 8px;
+	font-weight: 500;
+	color: #b46f52;
+	margin-right: 8px;
 }
 .mp-old-price {
 	text-decoration: line-through;
