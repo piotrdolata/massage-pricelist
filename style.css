@@ -169,12 +169,14 @@
 .mp-feature-pill {
 	font-family: "Jost", sans-serif;
 	font-size: 10px;
-	color: #b46f52;
+	color: #666;
 	text-transform: uppercase;
-	background: #f8f6f3;
-	padding: 6px 10px;
+	background: transparent;
+	padding: 3px 9px;
 	border-radius: 999px;
+	border: 1px solid #666 !important;
 }
+
 .mp-editor-add-wrap {
 	grid-column: 1 / -1;
 	display: flex;
@@ -214,7 +216,7 @@
 	font-family: "Jost", sans-serif;
 	font-size: 10px;
 	color: #ffffff;
-	background: #ec522b;
+	background: #c19a3f;
 	text-transform: uppercase;
 	padding: 2px 6px;
 	border-radius: 12px;
